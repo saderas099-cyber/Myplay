@@ -1,0 +1,21 @@
+{
+  "name": "debt-hunt-forest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Борг: Ліс — кооперативна хоррор-гра виживання (клон ідеї Debt Hunt)",
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --minify --format=iife --target=chrome80 --outfile=www/game.js",
+    "dev": "esbuild src/main.js --bundle --sourcemap --format=iife --target=chrome80 --outfile=www/game.js --watch",
+    "serve": "npx http-server www -p 8080 -c-1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "peerjs": "^1.5.4",
+    "three": "^0.160.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5"
+  }
+}
