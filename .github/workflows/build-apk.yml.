@@ -1,0 +1,50 @@
+name: Build APK
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: |
+          unzip -q DebtForest-project.zip
+          cp -r debthunt/. .
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: android-actions/setup-android@v3
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+      - name: Bundle game
+        run: npm run build
+      - name: Add Android platform
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Patch manifest and theme (landscape, fullscreen)
+        run: |
+          python3 - <<'PY'
+          import re,glob
+          m='android/app/src/main/AndroidManifest.xml'
+          s=open(m,encoding='utf8').read()
+          if 'screenOrientation' not in s:
+              s=s.replace('<activity','<activity android:screenOrientation="sensorLandscape"',1)
+          if 'ACCESS_NETWORK_STATE' not in s:
+              s=s.replace('<application','<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <application',1)
+          open(m,'w',encoding='utf8').write(s)
+          for f in glob.glob('android/app/src/main/res/values/styles.xml'):
+              t=open(f,encoding='utf8').read()
+              t=re.sub(r'(<style name="AppTheme.NoActionBar"[^>]*>)',r'\1\n        <item name="android:windowFullscreen">true</item>\n        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>',t,1)
+              open(f,'w',encoding='utf8').write(t)
+          PY
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DebtForest-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
